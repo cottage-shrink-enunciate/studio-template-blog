@@ -1,20 +1,21 @@
 ---
-import { type CollectionEntry, getCollection } from 'astro:content';
-import BlogPost from '../../layouts/BlogPost.astro';
+import { Blog, db } from "astro:db"
+import { marked } from "marked"
+import BlogPost from "../../layouts/BlogPost.astro"
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog');
+	const posts = await db.select().from(Blog)
 	return posts.map((post) => ({
-		params: { slug: post.slug },
-		props: post,
-	}));
+		params: { slug: post.slug || post.id },
+		props: { post },
+	}))
 }
-type Props = CollectionEntry<'blog'>;
-
-const post = Astro.props;
-const { Content } = await post.render();
+type Props = {
+	post: typeof Blog.$inferSelect
+}
+const { post } = Astro.props
 ---
 
-<BlogPost {...post.data}>
-	<Content />
+<BlogPost {...post}>
+	<Fragment set:html={marked(post.content, { async: true })} />
 </BlogPost>
